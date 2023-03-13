@@ -1,0 +1,68 @@
+mport java.sql.*;
+
+class VehicleDealer {
+    private double loanAmount;
+    private int loanTerm;
+    private double interestRate;
+
+    public VehicleDealer(double loanAmount, int loanTerm, double interestRate) {
+        this.loanAmount = loanAmount;
+        this.loanTerm = loanTerm;
+        this.interestRate = interestRate;
+    }
+
+    public double getLoanAmount() {
+        return loanAmount;
+    }
+
+    public int getLoanTerm() {
+        return loanTerm;
+    }
+
+    public double getInterestRate() {
+        return interestRate;
+    }
+
+    public double calculateEMI() {
+        double monthlyInterestRate = interestRate / (12 * 100);
+        double emi = (loanAmount * monthlyInterestRate * Math.pow(1 + monthlyInterestRate, loanTerm))
+                / (Math.pow(1 + monthlyInterestRate, loanTerm) - 1);
+        return emi;
+    }
+}
+
+class LoanDetails extends VehicleDealer {
+    private String customerName;
+    private String customerPhone;
+
+    public LoanDetails(double loanAmount, int loanTerm, double interestRate, String customerName, String customerPhone) {
+        super(loanAmount, loanTerm, interestRate);
+        this.customerName = customerName;
+        this.customerPhone = customerPhone;
+    }
+
+    public void saveToDatabase() {
+        try {
+            Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/vehicle_dealer", "root", "");
+            PreparedStatement stmt = conn.prepareStatement("INSERT INTO loan_details VALUES (?, ?, ?, ?, ?)");
+            stmt.setDouble(1, getLoanAmount());
+            stmt.setInt(2, getLoanTerm());
+            stmt.setDouble(3, getInterestRate());
+            stmt.setString(4, customerName);
+            stmt.setString(5, customerPhone);
+            stmt.executeUpdate();
+            System.out.println("Loan details saved to database.");
+        } catch (SQLException e) {
+            System.out.println("Error saving loan details to database: " + e.getMessage());
+        }
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        LoanDetails loan = new LoanDetails(50000, 36, 12, "John Doe", "555-1234");
+        double emi = loan.calculateEMI();
+        System.out.printf("EMI: Rs. %.2f\n", emi);
+        loan.saveToDatabase();
+    }
+}
